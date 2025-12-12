@@ -1,5 +1,8 @@
 package com.library.book_management.controller;
 
+import com.library.book_management.dto.BookResponse;
+import com.library.book_management.dto.CreateBookRequest;
+import com.library.book_management.dto.UpdateBookRequest;
 import com.library.book_management.model.Book;
 import com.library.book_management.service.BookService;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +21,7 @@ public class BookController {
     }
 
     @PostMapping("/saveBook")
-    public void saveBook(@RequestBody Book book) {
+    public void saveBook(@RequestBody CreateBookRequest book) {
         bookService.saveBook(book);
     }
 
@@ -30,7 +33,7 @@ public class BookController {
     // FIXED — only ONE request body JSON object
     @PutMapping("/updateBook")
     public void updateBook(@RequestBody UpdateBookRequest req) {
-        bookService.updatePrice(req.getId(), req.getPrice());
+        bookService.updatePrice(Long.parseLong(req.getId()), req.getPrice());
     }
 
     @DeleteMapping("/deleteBook/{isbn}")
@@ -39,7 +42,7 @@ public class BookController {
     }
 
     @GetMapping("/getAll")
-    public List<Book> getAllBooks() {
+    public List<BookResponse> getAllBooks() {
         return bookService.getAllBooks();
     }
 }
