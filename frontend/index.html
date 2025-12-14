@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Management API Client</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 30px;
+        text-align: center;
+        font-size: 2.5em;
+      }
+
+      h2 {
+        color: #667eea;
+        border-bottom: 3px solid #667eea;
+        padding-bottom: 10px;
+        margin-top: 30px;
+        margin-bottom: 20px;
+      }
+
+      .section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border-left: 4px solid #667eea;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #555;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      input[type="email"] {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-right: 10px;
+        margin-top: 10px;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      button.delete-btn {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        padding: 6px 12px;
+        font-size: 14px;
+      }
+
+      .error-message {
+        color: #dc3545;
+        font-size: 0.9em;
+        margin-top: 5px;
+        display: block;
+      }
+
+      .success-message {
+        color: #28a745;
+        background: #d4edda;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 10px 0;
+        border-left: 4px solid #28a745;
+      }
+
+      .info-message {
+        color: #0c5460;
+        background: #d1ecf1;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 10px 0;
+        border-left: 4px solid #0c5460;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      table th,
+      table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      table th {
+        background: #667eea;
+        color: white;
+        font-weight: 600;
+      }
+
+      table tr:hover {
+        background: #f8f9fa;
+      }
+
+      .validation-hint {
+        font-size: 0.85em;
+        color: #6c757d;
+        font-style: italic;
+        margin-top: 3px;
+      }
+
+      .loading {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .inline-form {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+      }
+
+      .inline-form .form-group {
+        flex: 1;
+        margin-bottom: 0;
+      }
+
+      .delete-form {
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📚 Book Management System</h1>
+
+      <div id="status-message"></div>
+      <div id="general-error"></div>
+
+      <!-- Create Author Section -->
+      <div class="section">
+        <h2>1. Create Author</h2>
+        <form id="create-author-form">
+          <div class="form-group">
+            <label for="author-name">Name *</label>
+            <input
+              type="text"
+              id="author-name"
+              name="name"
+              required
+              maxlength="100"
+            />
+            <span class="validation-hint">Required, max 100 characters</span>
+            <span id="error-author-name" class="error-message"></span>
+          </div>
+          <div class="form-group">
+            <label for="author-email">Email *</label>
+            <input type="email" id="author-email" name="email" required />
+            <span class="validation-hint">Required, valid email format</span>
+            <span id="error-author-email" class="error-message"></span>
+          </div>
+          <button type="submit">Create Author</button>
+        </form>
+        <div id="author-result"></div>
+      </div>
+
+      <!-- Create Publisher Section -->
+      <div class="section">
+        <h2>2. Create Publisher</h2>
+        <form id="create-publisher-form">
+          <div class="form-group">
+            <label for="publisher-name">Name *</label>
+            <input
+              type="text"
+              id="publisher-name"
+              name="name"
+              required
+              maxlength="100"
+            />
+            <span class="validation-hint">Required, max 100 characters</span>
+            <span id="error-publisher-name" class="error-message"></span>
+          </div>
+          <div class="form-group">
+            <label for="publisher-address">Address *</label>
+            <input type="text" id="publisher-address" name="address" required />
+            <span class="validation-hint">Required</span>
+            <span id="error-publisher-address" class="error-message"></span>
+          </div>
+          <button type="submit">Create Publisher</button>
+        </form>
+        <div id="publisher-result"></div>
+      </div>
+
+      <!-- Create Book Section -->
+      <div class="section">
+        <h2>3. Create Book</h2>
+        <form id="create-book-form">
+          <div class="form-group">
+            <label for="book-title">Title *</label>
+            <input type="text" id="book-title" name="title" required />
+            <span class="validation-hint">Required</span>
+            <span id="error-title" class="error-message"></span>
+          </div>
+          <div class="form-group">
+            <label for="book-category">Category *</label>
+            <input type="text" id="book-category" name="category" required />
+            <span class="validation-hint">Required</span>
+            <span id="error-category" class="error-message"></span>
+          </div>
+          <div class="form-group">
+            <label for="book-isbn">ISBN *</label>
+            <input type="text" id="book-isbn" name="isbn" required />
+            <span class="validation-hint"
+              >Required, valid ISBN format (e.g., 978-0-123456-78-9 or
+              0-123456-78-9)</span
+            >
+            <span id="error-isbn" class="error-message"></span>
+          </div>
+          <div class="form-group">
+            <label for="book-price">Price *</label>
+            <input
+              type="number"
+              id="book-price"
+              name="price"
+              step="0.01"
+              min="5"
+              required
+            />
+            <span class="validation-hint">Required, minimum 5.0</span>
+            <span id="error-price" class="error-message"></span>
+          </div>
+          <div class="form-group">
+            <label for="book-quantity">Quantity *</label>
+            <input
+              type="number"
+              id="book-quantity"
+              name="quantity"
+              min="1"
+              required
+            />
+            <span class="validation-hint">Required, minimum 1</span>
+            <span id="error-quantity" class="error-message"></span>
+          </div>
+          <div class="form-group">
+            <label for="book-author-id">Author ID *</label>
+            <input type="number" id="book-author-id" name="authorId" required />
+            <span class="validation-hint"
+              >Required, must be an existing author ID</span
+            >
+            <span id="error-authorId" class="error-message"></span>
+          </div>
+          <div class="form-group">
+            <label for="book-publisher-id">Publisher ID *</label>
+            <input
+              type="number"
+              id="book-publisher-id"
+              name="publisherId"
+              required
+            />
+            <span class="validation-hint"
+              >Required, must be an existing publisher ID</span
+            >
+            <span id="error-publisherId" class="error-message"></span>
+          </div>
+          <button type="submit">Create Book</button>
+        </form>
+        <div id="book-create-result"></div>
+      </div>
+
+      <!-- Get All Books Section -->
+      <div class="section">
+        <h2>4. Get All Books</h2>
+        <button onclick="fetchAllBooks()">Refresh Book List</button>
+        <div id="books-list-container"></div>
+      </div>
+
+      <!-- Update Book Section -->
+      <div class="section">
+        <h2>5. Update Book Price</h2>
+        <form id="update-book-form">
+          <div class="form-group">
+            <label for="update-book-id">Book ID *</label>
+            <input type="text" id="update-book-id" name="id" required />
+            <span class="validation-hint">Required, book ID to update</span>
+          </div>
+          <div class="form-group">
+            <label for="update-book-price">New Price *</label>
+            <input
+              type="number"
+              id="update-book-price"
+              name="price"
+              step="0.01"
+              required
+            />
+            <span class="validation-hint">Required, new price value</span>
+          </div>
+          <button type="submit">Update Book Price</button>
+        </form>
+        <div id="book-update-result"></div>
+      </div>
+
+      <!-- Delete Book Section -->
+      <div class="section">
+        <h2>6. Delete Book</h2>
+        <form id="delete-book-form" class="inline-form">
+          <div class="form-group">
+            <label for="delete-book-isbn">ISBN *</label>
+            <input
+              type="text"
+              id="delete-book-isbn"
+              name="isbn"
+              required
+              placeholder="Enter ISBN to delete"
+            />
+            <span class="validation-hint"
+              >Required, ISBN of book to delete</span
+            >
+          </div>
+          <button type="submit" class="delete-btn">Delete Book</button>
+        </form>
+        <div id="book-delete-result"></div>
+      </div>
+
+      <!-- Inventory Check Section -->
+      <div class="section">
+        <h2>7. Check Inventory by Category</h2>
+        <form id="inventory-form" class="inline-form">
+          <div class="form-group">
+            <label for="inventory-category">Category *</label>
+            <input
+              type="text"
+              id="inventory-category"
+              name="category"
+              required
+              placeholder="Enter category name"
+            />
+            <span class="validation-hint"
+              >Required, category to check inventory</span
+            >
+          </div>
+          <button type="submit">Check Inventory</button>
+        </form>
+        <div id="inventory-result"></div>
+      </div>
+    </div>
+
+    <script>
+      const baseURL = "http://localhost:8080/api";
+
+      // Helper functions
+      function clearMessages() {
+        document.getElementById("status-message").innerHTML = "";
+        document.getElementById("general-error").innerHTML = "";
+        document
+          .querySelectorAll(".error-message")
+          .forEach((el) => (el.textContent = ""));
+        document
+          .querySelectorAll(
+            "#author-result, #publisher-result, #book-create-result, #book-update-result, #book-delete-result, #inventory-result"
+          )
+          .forEach((el) => (el.innerHTML = ""));
+      }
+
+      function showError(elementId, message) {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.textContent = message;
+        }
+      }
+
+      function showSuccess(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+          container.innerHTML = `<div class="success-message">${message}</div>`;
+        }
+      }
+
+      function showInfo(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+          container.innerHTML = `<div class="info-message">${message}</div>`;
+        }
+      }
+
+      function handleValidationErrors(responseJson, prefix = "") {
+        if (responseJson.errors) {
+          const errorMsg = document.getElementById("general-error");
+          errorMsg.innerHTML = `<div class="error-message" style="padding: 12px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545; margin: 10px 0;">Validation Error: ${
+            responseJson.message || "Please check the form fields"
+          }</div>`;
+
+          for (const field in responseJson.errors) {
+            const errorElement = document.getElementById(
+              `${prefix}error-${field}`
+            );
+            if (errorElement) {
+              errorElement.textContent = responseJson.errors[field];
+            }
+          }
+        } else if (responseJson.message) {
+          const errorMsg = document.getElementById("general-error");
+          errorMsg.innerHTML = `<div class="error-message" style="padding: 12px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545; margin: 10px 0;">Error (Status ${
+            responseJson.status || "Unknown"
+          }): ${responseJson.message}</div>`;
+        }
+      }
+
+      // 1. Create Author
+      document
+        .getElementById("create-author-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          clearMessages();
+
+          const formData = new FormData(e.target);
+          const authorData = {
+            name: formData.get("name").trim(),
+            email: formData.get("email").trim(),
+          };
+
+          try {
+            const response = await fetch(`${baseURL}/author/saveAuthor`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(authorData),
+            });
+
+            const responseData = await response.json();
+
+            if (response.ok) {
+              showSuccess(
+                "author-result",
+                `Author created successfully! ID: ${responseData.id}, Name: ${responseData.name}, Email: ${responseData.email}`
+              );
+              e.target.reset();
+            } else {
+              handleValidationErrors(responseData, "author-");
+            }
+          } catch (error) {
+            document.getElementById(
+              "general-error"
+            ).innerHTML = `<div class="error-message" style="padding: 12px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545; margin: 10px 0;">Network error: ${error.message}</div>`;
+          }
+        });
+
+      // 2. Create Publisher
+      document
+        .getElementById("create-publisher-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          clearMessages();
+
+          const formData = new FormData(e.target);
+          const publisherData = {
+            name: formData.get("name").trim(),
+            address: formData.get("address").trim(),
+          };
+
+          try {
+            const response = await fetch(`${baseURL}/publisher/savePublisher`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(publisherData),
+            });
+
+            if (response.ok) {
+              showSuccess(
+                "publisher-result",
+                "Publisher created successfully!"
+              );
+              e.target.reset();
+            } else {
+              const responseData = await response.json();
+              handleValidationErrors(responseData, "publisher-");
+            }
+          } catch (error) {
+            document.getElementById(
+              "general-error"
+            ).innerHTML = `<div class="error-message" style="padding: 12px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545; margin: 10px 0;">Network error: ${error.message}</div>`;
+          }
+        });
+
+      // 3. Create Book
+      document
+        .getElementById("create-book-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          clearMessages();
+
+          const formData = new FormData(e.target);
+          const bookData = {
+            title: formData.get("title").trim(),
+            category: formData.get("category").trim(),
+            isbn: formData.get("isbn").trim(),
+            price: parseFloat(formData.get("price")),
+            quantity: parseInt(formData.get("quantity")),
+            authorId: parseInt(formData.get("authorId")),
+            publisherId: parseInt(formData.get("publisherId")),
+          };
+
+          try {
+            const response = await fetch(`${baseURL}/books/saveBook`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(bookData),
+            });
+
+            if (response.ok) {
+              showSuccess("book-create-result", "Book created successfully!");
+              e.target.reset();
+              fetchAllBooks(); // Refresh the book list
+            } else {
+              const responseData = await response.json();
+              handleValidationErrors(responseData);
+            }
+          } catch (error) {
+            document.getElementById(
+              "general-error"
+            ).innerHTML = `<div class="error-message" style="padding: 12px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545; margin: 10px 0;">Network error: ${error.message}</div>`;
+          }
+        });
+
+      // 4. Get All Books
+      async function fetchAllBooks() {
+        const container = document.getElementById("books-list-container");
+        container.innerHTML = '<div class="loading"></div> Loading books...';
+
+        try {
+          const response = await fetch(`${baseURL}/books/getAll`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch books: ${response.statusText}`);
+          }
+          const books = await response.json();
+
+          if (books.length === 0) {
+            container.innerHTML =
+              '<div class="info-message">No books found in the database.</div>';
+            return;
+          }
+
+          let html = `
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>ISBN</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Author</th>
+                  <th>Publisher</th>
+                </tr>
+              </thead>
+              <tbody>
+          `;
+
+          books.forEach((book) => {
+            html += `
+              <tr>
+                <td>${book.id}</td>
+                <td>${book.title}</td>
+                <td>${book.category}</td>
+                <td>${book.isbn}</td>
+                <td>$${book.price.toFixed(2)}</td>
+                <td>${book.quantity}</td>
+                <td>${book.authorName || "N/A"} (ID: ${
+              book.authorId || "N/A"
+            })</td>
+                <td>${book.publisherName || "N/A"} (ID: ${
+              book.publisherId || "N/A"
+            })</td>
+              </tr>
+            `;
+          });
+
+          html += `
+              </tbody>
+            </table>
+          `;
+
+          container.innerHTML = html;
+        } catch (error) {
+          container.innerHTML = `<div class="error-message" style="padding: 12px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545;">Error fetching books: ${error.message}</div>`;
+        }
+      }
+
+      // 5. Update Book Price
+      document
+        .getElementById("update-book-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          clearMessages();
+
+          const formData = new FormData(e.target);
+          const updateData = {
+            id: formData.get("id").trim(),
+            price: parseFloat(formData.get("price")),
+          };
+
+          try {
+            const response = await fetch(`${baseURL}/books/updateBook`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(updateData),
+            });
+
+            if (response.ok) {
+              showSuccess(
+                "book-update-result",
+                `Book price updated successfully! Book ID: ${
+                  updateData.id
+                }, New Price: $${updateData.price.toFixed(2)}`
+              );
+              e.target.reset();
+              fetchAllBooks(); // Refresh the book list
+            } else {
+              const responseData = await response.json();
+              handleValidationErrors(responseData);
+            }
+          } catch (error) {
+            document.getElementById(
+              "general-error"
+            ).innerHTML = `<div class="error-message" style="padding: 12px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545; margin: 10px 0;">Network error: ${error.message}</div>`;
+          }
+        });
+
+      // 6. Delete Book
+      document
+        .getElementById("delete-book-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          clearMessages();
+
+          const formData = new FormData(e.target);
+          const isbn = formData.get("isbn").trim();
+
+          if (
+            !confirm(
+              `Are you sure you want to delete the book with ISBN: ${isbn}?`
+            )
+          ) {
+            return;
+          }
+
+          try {
+            const response = await fetch(
+              `${baseURL}/books/deleteBook/${encodeURIComponent(isbn)}`,
+              {
+                method: "DELETE",
+              }
+            );
+
+            if (response.ok) {
+              showSuccess(
+                "book-delete-result",
+                `Book with ISBN "${isbn}" deleted successfully!`
+              );
+              e.target.reset();
+              fetchAllBooks(); // Refresh the book list
+            } else {
+              const responseData = await response.json();
+              handleValidationErrors(responseData);
+            }
+          } catch (error) {
+            document.getElementById(
+              "general-error"
+            ).innerHTML = `<div class="error-message" style="padding: 12px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545; margin: 10px 0;">Network error: ${error.message}</div>`;
+          }
+        });
+
+      // 7. Check Inventory
+      document
+        .getElementById("inventory-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          clearMessages();
+
+          const formData = new FormData(e.target);
+          const category = formData.get("category").trim();
+
+          try {
+            const response = await fetch(
+              `${baseURL}/books/inventory?category=${encodeURIComponent(
+                category
+              )}`
+            );
+
+            if (response.ok) {
+              const count = await response.json();
+              showInfo(
+                "inventory-result",
+                `Inventory for category "${category}": <strong>${count} books</strong>`
+              );
+            } else {
+              const responseData = await response.json();
+              handleValidationErrors(responseData);
+            }
+          } catch (error) {
+            document.getElementById(
+              "general-error"
+            ).innerHTML = `<div class="error-message" style="padding: 12px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545; margin: 10px 0;">Network error: ${error.message}</div>`;
+          }
+        });
+
+      // Load books on page load
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchAllBooks();
+      });
+    </script>
+  </body>
+</html>
